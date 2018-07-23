@@ -1,22 +1,24 @@
 package treemapsimple.structs;
 import java.util.AbstractCollection;
+import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
+import java.util.Map;
+import java.util.SortedMap;
 /**
  *
  * @author detectivejd
  * @param <K>
  * @param <V>
  */
-public class MyTreeMap<K,V> implements Map<K, V>
+public class MyTreeMap<K,V> implements SortedMap<K, V>
 {
     private final Comparator<? super K> comparator;
-    private final boolean RED   = true;
-    private final boolean BLACK = false;
+    private static boolean RED   = true;
+    private static boolean BLACK = false;
     private Entry<K,V> root;
     private int size;
     public MyTreeMap() {
@@ -27,7 +29,7 @@ public class MyTreeMap<K,V> implements Map<K, V>
         clear();
         this.comparator = xcomparator;
     }
-    public MyTreeMap(Map<? extends K, ? extends V> m) {
+    public MyTreeMap(java.util.Map<? extends K, ? extends V> m) {
         clear();
         this.comparator = null;
         putAll(m);
@@ -184,7 +186,6 @@ public class MyTreeMap<K,V> implements Map<K, V>
     }
     private void deleteEntry(Entry<K,V> p) {
         size--;
-        //if (p.left != null && p.right != null) {
         if(leftOf(p) != null && rightOf(p) != null){
             Entry<K,V> s = successor(p);
             p.key = s.key;
@@ -192,7 +193,6 @@ public class MyTreeMap<K,V> implements Map<K, V>
             p = s;
         } 
         Entry<K,V> rep = (leftOf(p) != null ? leftOf(p) : rightOf(p));
-        //Entry<K,V> rep = (p.left != null ? p.left : p.right);
         if (rep != null) {
             rep.parent = parentOf(p);
             if (parentOf(p) == null) {
@@ -331,30 +331,62 @@ public class MyTreeMap<K,V> implements Map<K, V>
         y.left = p;
         p.parent = y;
     }    
-    
-     @Override
-    public String toString(){
-        if (root == null)
-            return "";
-        else
-            return print(root, 0);
-    }
-    private String print(Entry<K,V> x, int depth) {
-        if (x == null)
-            return "";
-        else
-            return print(x.right, depth + 1) + 
-                indent(depth) + x + 
-                "\n"+ print(x.left, depth + 1);
-            
-    }
-    private String indent(int s) {
-        String result = "";
-        for (int i = 0; i < s; i++)
-            result += "  ";
-        return result;
-    }  
     /*------------------------------------------------------------*/
+    private int compare(Object k1, Object k2) {
+        return comparator==null ? ((Comparable<? super K>)k1).compareTo((K)k2)
+            : comparator.compare((K)k1, (K)k2);
+    }
+    private Entry<K,V> getCeilingEntry(K key) {
+        Entry<K,V> p = root;
+        while (p != null) {
+            int cmp = compare(key, p.key);
+            if (cmp < 0) {
+                if (p.left != null)
+                    p = p.left;
+                else
+                    return p;
+            } else if (cmp > 0) {
+                if (p.right != null) {
+                    p = p.right;
+                } else {
+                    Entry<K,V> parent = p.parent;
+                    Entry<K,V> ch = p;
+                    while (parent != null && ch == parent.right) {
+                        ch = parent;
+                        parent = parent.parent;
+                    }
+                    return parent;
+                }
+            } else
+                return p;
+        }
+        return null;
+    }
+    private Entry<K,V> getHigherEntry(K key) {
+        Entry<K,V> p = root;
+        while (p != null) {
+            int cmp = compare(key, p.key);
+            if (cmp < 0) {
+                if (p.left != null)
+                    p = p.left;
+                else
+                    return p;
+            } else {
+                if (p.right != null) {
+                    p = p.right;
+                } else {
+                    Entry<K,V> parent = p.parent;
+                    Entry<K,V> ch = p;
+                    while (parent != null && ch == parent.right) {
+                        ch = parent;
+                        parent = parent.parent;
+                    }
+                    return parent;
+                }
+            }
+        }
+        return null;
+    }
     private Entry<K,V> successor(Entry<K,V> t) {      
         if (t == null)
             return null;
@@ -373,8 +405,8 @@ public class MyTreeMap<K,V> implements Map<K, V>
             return p;
         }
     }
-    private Entry<K,V> getFirstEntry() {
-        Entry<K,V> p = root;
+    private MyTreeMap.Entry<K,V> getFirstEntry() {
+        MyTreeMap.Entry<K,V> p = root;
         if (p != null){
             while(leftOf(p) != null){
                 p = leftOf(p);
@@ -382,7 +414,15 @@ public class MyTreeMap<K,V> implements Map<K, V>
         }
         return p;
     }
-    
+    private Entry<K,V> getLastEntry() {
+        Entry<K,V> p = root;
+        if (p != null){
+            while(rightOf(p) != null){
+                p = rightOf(p);
+            }
+        }
+        return p;
+    }
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
         return new EntrySet();
@@ -395,6 +435,35 @@ public class MyTreeMap<K,V> implements Map<K, V>
     public Set<K> keySet() {
         return new KeySet();
     }
+
+    @Override
+    public Comparator<? super K> comparator() {
+        return comparator;
+    }
+
+    @Override
+    public SortedMap<K, V> subMap(K fromKey, K toKey) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public SortedMap<K, V> headMap(K toKey) {
+       throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public SortedMap<K, V> tailMap(K fromKey) {
+        return new NavigableSubMap(this,false,fromKey,true,true,null,true);
+    }
+    @Override
+    public K firstKey() {
+        return getFirstEntry().key;
+    }
+
+    @Override
+    public K lastKey() {
+        return getLastEntry().key;
+    }    
     /*------------------------------------------------------------------*/
     private class EntrySet extends AbstractSet<Map.Entry<K,V>> {
         @Override
@@ -411,7 +480,7 @@ public class MyTreeMap<K,V> implements Map<K, V>
             super(first);
         }  
         @Override
-        public Map.Entry<K,V> next() {
+        public Entry<K,V> next() {
             return nextEntry();
         }
     }
@@ -440,7 +509,6 @@ public class MyTreeMap<K,V> implements Map<K, V>
         public Iterator<K> iterator() {
             return new KeyIterator(getFirstEntry());
         }
-
         @Override
         public int size() {
             return size;
@@ -475,7 +543,156 @@ public class MyTreeMap<K,V> implements Map<K, V>
         }
     }
     /*------------------------------------------------------------*/
-    class Entry<K,V> implements Map.Entry<K,V> {
+    class NavigableSubMap<K,V> extends AbstractMap<K,V> implements SortedMap<K,V>{
+        final MyTreeMap<K,V> m;
+        final K lo, hi;
+        final boolean fromStart, toEnd;
+        final boolean loInclusive, hiInclusive;
+        NavigableSubMap(MyTreeMap<K, V> m,
+                boolean fromStart, K lo, boolean loInclusive, 
+                boolean toEnd, K hi, boolean hiInclusive) {
+            if (!fromStart && !toEnd) {
+                if (m.compare(lo, hi) > 0)
+                    throw new IllegalArgumentException("fromKey > toKey");
+            } else {
+                if (!fromStart) // type check
+                    m.compare(lo, lo);
+                if (!toEnd)
+                    m.compare(hi, hi);
+            }
+            this.m = m;
+            this.lo = lo;
+            this.hi = hi;
+            this.fromStart = fromStart;
+            this.toEnd = toEnd;
+            this.loInclusive = loInclusive;
+            this.hiInclusive = hiInclusive;
+        }        
+        private boolean tooLow(Object key) {
+            if (!fromStart) {
+                int c = m.compare(key, lo);
+                if (c < 0 || (c == 0 && !loInclusive))
+                    return true;
+            }
+            return false;
+        }
+        private boolean tooHigh(Object key) {
+            if (!toEnd) {
+                int c = m.compare(key, hi);
+                if (c > 0 || (c == 0 && !hiInclusive))
+                    return true;
+            }
+            return false;
+        }
+        /*
+            Función rebuscada que no le encuentro la vuelta
+        */
+        private MyTreeMap.Entry<K,V> absLowest() {
+            MyTreeMap.Entry<K,V> e;
+            if(fromStart){
+                e = m.getFirstEntry();
+            } else if(loInclusive){
+                e = m.getCeilingEntry(lo);
+            } else {
+                e = m.getHigherEntry(lo);
+            }
+            return (e == null || tooHigh(e.getKey())) ? null : e;
+        }
+        private MyTreeMap.Entry<K,V> absHighFence() {
+            if(toEnd){
+                return null;
+            } else if(hiInclusive){
+                return m.getHigherEntry(hi);
+            } else {
+                return m.getCeilingEntry(hi);
+            }
+        }
+        @Override
+        public Set<Map.Entry<K, V>> entrySet() {
+            return new EntrySetView();
+        }
+        @Override
+        public Comparator<? super K> comparator() {
+            return m.comparator;
+        }
+        @Override
+        public SortedMap<K, V> subMap(K fromKey, K toKey) {
+            return m.subMap(fromKey, toKey);
+        }
+        @Override
+        public SortedMap<K, V> headMap(K toKey) {
+            return m.headMap(toKey);
+        }
+        @Override
+        public SortedMap<K, V> tailMap(K fromKey) {
+            return m.tailMap(fromKey);
+        }
+        @Override
+        public K firstKey() {
+            return m.firstKey();
+        }
+        @Override
+        public K lastKey() {
+            return m.lastKey();
+        }        
+        private class EntrySetView extends AbstractSet<Map.Entry<K,V>> {
+            /*
+                El error que me da ahora es este:
+                incompatible types: Entry<K#1,V#1> cannot be converted to Entry<K#2,V#2>
+                    where K#1,V#1,K#2,V#2 are type-variables:
+                    K#1 extends Object declared in class MyTreeMap.NavigableSubMap
+                    V#1 extends Object declared in class MyTreeMap.NavigableSubMap
+                    K#2 extends Object declared in class MyTreeMap
+                    V#2 extends Object declared in class MyTreeMap
+                --...
+            */
+            @Override
+            public Iterator<Map.Entry<K, V>> iterator() {
+                // me marca como error la función absLowest()
+                return new SubMapEntryIterator(absLowest(), null);
+            }
+            @Override
+            public int size() {
+                if(fromStart && toEnd){
+                    return m.size;
+                } else {
+                    return size; 
+                }
+            }        
+        }
+    }
+    /*------------------------------------------------------------*/    
+    abstract class SubMapIterator<T> implements Iterator<T> {
+        Entry<K,V> last;
+        Entry<K,V> next;
+        final Object fenceKey;
+        SubMapIterator(Entry<K,V> first, Entry<K,V> fence) {
+            last = null;
+            next = first;
+            fenceKey = fence == null ? new Object() : fence.key;
+        }
+        @Override
+        public boolean hasNext() {
+            return next != null && next.key != fenceKey;
+        }
+        public Entry<K,V> nextEntry() {
+            Entry<K,V> e = next;
+            next = successor(e);
+            last = e;
+            return e;
+        }        
+    }
+    class SubMapEntryIterator extends SubMapIterator<Map.Entry<K,V>> {
+        public SubMapEntryIterator(Entry<K, V> first, Entry<K, V> fence) {
+            super(first, fence);
+        }        
+        @Override
+        public MyTreeMap.Entry<K, V> next() {
+            return nextEntry();
+        }        
+    }
+    /*------------------------------------------------------------*/        
+    static final class Entry<K,V> implements Map.Entry<K,V> {
         K key;
         V value;
         Entry<K,V> left;
