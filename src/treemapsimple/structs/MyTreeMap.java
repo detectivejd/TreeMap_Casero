@@ -43,13 +43,13 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
         return size == 0;        
     }
     @Override
-    public void clear() {        
+    public final void clear() {        
         size = 0;
         root = null;
     }
     /*------------------------------------------------------------*/
     @Override
-    public void putAll(Map<? extends K, ? extends V> m) {
+    public final void putAll(Map<? extends K, ? extends V> m) {
         m.entrySet().forEach((e) -> {
             put(e.getKey(), e.getValue());
         });
@@ -277,20 +277,20 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
         setColor(x, BLACK);
     }
     /*------------------------------------------------------------*/
-    private boolean colorOf(Entry<K,V> p) {
+    private static <K,V> boolean colorOf(Entry<K,V> p) {
         return (p == null ? BLACK : p.color);
     }
-    private Entry<K,V> parentOf(Entry<K,V> p) {
+    private static <K,V> Entry<K,V> parentOf(Entry<K,V> p) {
         return (p == null ? null: p.parent);
     }
-    private void setColor(Entry<K,V> p, boolean c) {
+    private static <K,V> void setColor(Entry<K,V> p, boolean c) {
         if (p != null)
             p.color = c;
     }
-    private Entry<K,V> leftOf(Entry<K,V> p) {
+    private static <K,V> Entry<K,V> leftOf(Entry<K,V> p) {
         return (p == null) ? null: p.left;
     }
-    private Entry<K,V> rightOf(Entry<K,V> p) {
+    private static <K,V> Entry<K,V> rightOf(Entry<K,V> p) {
         return (p == null) ? null: p.right;
     }
     /**
@@ -387,7 +387,7 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
         }
         return null;
     }
-    private Entry<K,V> successor(Entry<K,V> t) {      
+    private static <K,V> Entry<K,V> successor(Entry<K,V> t) {      
         if (t == null)
             return null;
         else if (rightOf(t) != null) {
@@ -405,8 +405,8 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
             return p;
         }
     }
-    private MyTreeMap.Entry<K,V> getFirstEntry() {
-        MyTreeMap.Entry<K,V> p = root;
+    private Entry<K,V> getFirstEntry() {
+        Entry<K,V> p = root;
         if (p != null){
             while(leftOf(p) != null){
                 p = leftOf(p);
@@ -584,9 +584,6 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
             }
             return false;
         }
-        /*
-            Función rebuscada que no le encuentro la vuelta
-        */
         private MyTreeMap.Entry<K,V> absLowest() {
             MyTreeMap.Entry<K,V> e;
             if(fromStart){
@@ -636,20 +633,9 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
             return m.lastKey();
         }        
         private class EntrySetView extends AbstractSet<Map.Entry<K,V>> {
-            /*
-                El error que me da ahora es este:
-                incompatible types: Entry<K#1,V#1> cannot be converted to Entry<K#2,V#2>
-                    where K#1,V#1,K#2,V#2 are type-variables:
-                    K#1 extends Object declared in class MyTreeMap.NavigableSubMap
-                    V#1 extends Object declared in class MyTreeMap.NavigableSubMap
-                    K#2 extends Object declared in class MyTreeMap
-                    V#2 extends Object declared in class MyTreeMap
-                --...
-            */
             @Override
-            public Iterator<Map.Entry<K, V>> iterator() {
-                // me marca como error la función absLowest()
-                return new SubMapEntryIterator(absLowest(), null);
+            public Iterator<Map.Entry<K,V>> iterator() {
+                return new SubMapEntryIterator(absLowest(), absHighFence());                
             }
             @Override
             public int size() {
@@ -660,39 +646,38 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
                 }
             }        
         }
-    }
-    /*------------------------------------------------------------*/    
-    abstract class SubMapIterator<T> implements Iterator<T> {
-        Entry<K,V> last;
-        Entry<K,V> next;
-        final Object fenceKey;
-        SubMapIterator(Entry<K,V> first, Entry<K,V> fence) {
-            last = null;
-            next = first;
-            fenceKey = fence == null ? new Object() : fence.key;
+        abstract class SubMapIterator<T> implements Iterator<T> {
+            MyTreeMap.Entry<K,V> last;
+            MyTreeMap.Entry<K,V> next;
+            final Object fenceKey;
+            SubMapIterator(MyTreeMap.Entry<K,V> first, MyTreeMap.Entry<K,V> fence) {
+                last = null;
+                next = first;
+                fenceKey = fence == null ? new Object() : fence.getKey();
+            }
+            @Override
+            public boolean hasNext() {
+                return next != null && next.getKey() != fenceKey;
+            }
+            public MyTreeMap.Entry<K,V> nextEntry() {
+                MyTreeMap.Entry<K,V> e = next;
+                next = successor(e);
+                last = e;
+                return e;
+            }        
         }
-        @Override
-        public boolean hasNext() {
-            return next != null && next.key != fenceKey;
+        class SubMapEntryIterator extends SubMapIterator<Map.Entry<K,V>> {
+            public SubMapEntryIterator(MyTreeMap.Entry<K, V> first, MyTreeMap.Entry<K, V> fence) {
+                super(first, fence);
+            }        
+            @Override
+            public Map.Entry<K, V> next() {
+                return nextEntry();
+            }        
         }
-        public Entry<K,V> nextEntry() {
-            Entry<K,V> e = next;
-            next = successor(e);
-            last = e;
-            return e;
-        }        
-    }
-    class SubMapEntryIterator extends SubMapIterator<Map.Entry<K,V>> {
-        public SubMapEntryIterator(Entry<K, V> first, Entry<K, V> fence) {
-            super(first, fence);
-        }        
-        @Override
-        public MyTreeMap.Entry<K, V> next() {
-            return nextEntry();
-        }        
     }
     /*------------------------------------------------------------*/        
-    static final class Entry<K,V> implements Map.Entry<K,V> {
+    static class Entry<K,V> implements Map.Entry<K,V> {
         K key;
         V value;
         Entry<K,V> left;
