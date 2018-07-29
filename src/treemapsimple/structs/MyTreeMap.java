@@ -333,10 +333,13 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
     }    
     /*------------------------------------------------------------*/
     private int compare(Object k1, Object k2) {
-        return comparator==null ? ((Comparable<? super K>)k1).compareTo((K)k2)
+        return comparator == null ? ((Comparable<? super K>)k1).compareTo((K)k2)
             : comparator.compare((K)k1, (K)k2);
     }
     private Entry<K,V> getCeilingEntry(K key) {
+        /*if(key == null){
+            key = getLastEntry().key;
+        }*/
         Entry<K,V> p = root;
         while (p != null) {
             int cmp = compare(key, p.key);
@@ -414,7 +417,7 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
         }
         return p;
     }
-    private Entry<K,V> getLastEntry() {
+    private  Entry<K,V> getLastEntry() {
         Entry<K,V> p = root;
         if (p != null){
             while(rightOf(p) != null){
@@ -443,12 +446,12 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
 
     @Override
     public SortedMap<K, V> subMap(K fromKey, K toKey) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return new NavigableSubMap(this,false,fromKey,true,false,toKey,false);
     }
 
     @Override
     public SortedMap<K, V> headMap(K toKey) {
-       throw new UnsupportedOperationException("Not supported yet.");
+       return new NavigableSubMap(this,true,null,true,false,toKey,false);
     }
 
     @Override
@@ -548,19 +551,35 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
         final K lo, hi;
         final boolean fromStart, toEnd;
         final boolean loInclusive, hiInclusive;
-        NavigableSubMap(MyTreeMap<K, V> m,
+        NavigableSubMap(MyTreeMap<K, V> xm,
                 boolean fromStart, K lo, boolean loInclusive, 
                 boolean toEnd, K hi, boolean hiInclusive) {
             if (!fromStart && !toEnd) {
-                if (m.compare(lo, hi) > 0)
-                    throw new IllegalArgumentException("fromKey > toKey");
+                if(lo == null && hi == null) {
+                    xm.clear();
+                } else if(lo != null && hi == null) {
+                    xm.compare(lo, lo);
+                } else if(lo == null && hi != null){
+                    xm.compare(hi, hi);
+                } else {    
+                    if (xm.compare(lo, hi) > 0)
+                        throw new IllegalArgumentException("fromKey > toKey");
+                }
             } else {
                 if (!fromStart) // type check
-                    m.compare(lo, lo);
+                    if(lo != null){
+                        xm.compare(lo, lo);
+                    } else {
+                        xm.clear();
+                    }
                 if (!toEnd)
-                    m.compare(hi, hi);
+                    if(hi != null){
+                        xm.compare(hi, hi);
+                    } else {
+                        xm.clear();
+                    }
             }
-            this.m = m;
+            this.m = xm;
             this.lo = lo;
             this.hi = hi;
             this.fromStart = fromStart;
@@ -577,7 +596,7 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
             return false;
         }
         private boolean tooHigh(Object key) {
-            if (!toEnd) {
+            if (!toEnd && hi != null) {
                 int c = m.compare(key, hi);
                 if (c > 0 || (c == 0 && !hiInclusive))
                     return true;
@@ -589,7 +608,7 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
             if(fromStart){
                 e = m.getFirstEntry();
             } else if(loInclusive){
-                e = m.getCeilingEntry(lo);
+                e = m.getCeilingEntry(lo != null ? lo : (!m.isEmpty() ? firstKey() : null));
             } else {
                 e = m.getHigherEntry(lo);
             }
@@ -601,7 +620,7 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
             } else if(hiInclusive){
                 return m.getHigherEntry(hi);
             } else {
-                return m.getCeilingEntry(hi);
+                return m.getCeilingEntry(hi != null ? hi : (!m.isEmpty() ? lastKey() : null));
             }
         }
         @Override
@@ -635,15 +654,13 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
         private class EntrySetView extends AbstractSet<Map.Entry<K,V>> {
             @Override
             public Iterator<Map.Entry<K,V>> iterator() {
+                //System.out.println("lowest: " + absLowest());
+                //System.out.println("high: " + absHighFence());
                 return new SubMapEntryIterator(absLowest(), absHighFence());                
             }
             @Override
             public int size() {
-                if(fromStart && toEnd){
-                    return m.size;
-                } else {
-                    return size; 
-                }
+                return m.size;
             }        
         }
         abstract class SubMapIterator<T> implements Iterator<T> {
