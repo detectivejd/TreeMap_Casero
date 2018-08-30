@@ -15,6 +15,11 @@ public class Cuerpo {
         t1.test();
         t1 = new DownTest();
         t1.test();
+        t1 = new TailMapTest();
+        t1.test();
+        t1 = new HeadMapTest();
+        t1.test();
+        t1 = new SubMapTest();
+        t1.test();
     }
-    
 }

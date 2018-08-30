@@ -7,14 +7,15 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Map;
-import java.util.SortedMap;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
 /**
  *
  * @author detectivejd
  * @param <K>
  * @param <V>
  */
-public class MyTreeMap<K,V> implements SortedMap<K, V>
+public class MyTreeMap<K,V> implements NavigableMap<K, V>
 {
     private final Comparator<? super K> comparator;
     private static boolean RED   = true;
@@ -67,13 +68,11 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
                 while (t != null) {
                     parent = t;
                     cmp = checkCompare(t,key);
-                    if(cmp < 0){
-                        t = leftOf(t);
-                    } else if(cmp > 0) {
-                        t = rightOf(t);
-                    } else {
+                    if(cmp == 0){
                         return t.value = value;
-                    } 
+                    } else {
+                        t = (cmp < 0) ? leftOf(t) : rightOf(t);
+                    }
                 }
                 Entry<K,V> e = new Entry<>(key, value, parent);
                 if (cmp < 0) {
@@ -337,9 +336,6 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
             : comparator.compare((K)k1, (K)k2);
     }
     private Entry<K,V> getCeilingEntry(K key) {
-        /*if(key == null){
-            key = getLastEntry().key;
-        }*/
         Entry<K,V> p = root;
         while (p != null) {
             int cmp = compare(key, p.key);
@@ -381,6 +377,58 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
                     Entry<K,V> parent = p.parent;
                     Entry<K,V> ch = p;
                     while (parent != null && ch == parent.right) {
+                        ch = parent;
+                        parent = parent.parent;
+                    }
+                    return parent;
+                }
+            }
+        }
+        return null;
+    }
+    private Entry<K,V> getFloorEntry(K key) {
+        Entry<K,V> p = root;
+        while (p != null) {
+            int cmp = compare(key, p.key);
+            if (cmp > 0) {
+                if (p.right != null)
+                    p = p.right;
+                else
+                    return p;
+            } else if (cmp < 0) {
+                if (p.left != null) {
+                    p = p.left;
+                } else {
+                    Entry<K,V> parent = p.parent;
+                    Entry<K,V> ch = p;
+                    while (parent != null && ch == parent.left) {
+                        ch = parent;
+                        parent = parent.parent;
+                    }
+                    return parent;
+                }
+            } else
+                return p;
+
+        }
+        return null;
+    }
+    private Entry<K,V> getLowerEntry(K key) {
+        Entry<K,V> p = root;
+        while (p != null) {
+            int cmp = compare(key, p.key);
+            if (cmp > 0) {
+                if (p.right != null)
+                    p = p.right;
+                else
+                    return p;
+            } else {
+                if (p.left != null) {
+                    p = p.left;
+                } else {
+                    Entry<K,V> parent = p.parent;
+                    Entry<K,V> ch = p;
+                    while (parent != null && ch == parent.left) {
                         ch = parent;
                         parent = parent.parent;
                     }
@@ -444,20 +492,7 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
         return comparator;
     }
 
-    @Override
-    public SortedMap<K, V> subMap(K fromKey, K toKey) {
-        return new NavigableSubMap(this,false,fromKey,true,false,toKey,false);
-    }
-
-    @Override
-    public SortedMap<K, V> headMap(K toKey) {
-       return new NavigableSubMap(this,true,null,true,false,toKey,false);
-    }
-
-    @Override
-    public SortedMap<K, V> tailMap(K fromKey) {
-        return new NavigableSubMap(this,false,fromKey,true,true,null,true);
-    }
+    
     @Override
     public K firstKey() {
         return getFirstEntry().key;
@@ -467,6 +502,115 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
     public K lastKey() {
         return getLastEntry().key;
     }    
+
+    @Override
+    public Entry<K, V> lowerEntry(K key) {
+        return getLowerEntry(key);
+    }
+
+    @Override
+    public K lowerKey(K key) {
+        return getLowerEntry(key).getKey();
+    }
+
+    @Override
+    public Entry<K, V> floorEntry(K key) {
+        return getFloorEntry(key);
+    }
+
+    @Override
+    public K floorKey(K key) {
+        return getFloorEntry(key).getKey();
+    }
+
+    @Override
+    public Entry<K, V> ceilingEntry(K key) {
+        return getCeilingEntry(key);
+    }
+
+    @Override
+    public K ceilingKey(K key) {
+        return getCeilingEntry(key).getKey();
+    }
+
+    @Override
+    public Entry<K, V> higherEntry(K key) {
+        return getHigherEntry(key);
+    }
+
+    @Override
+    public K higherKey(K key) {
+        return getHigherEntry(key).getKey();
+    }
+
+    @Override
+    public Entry<K, V> firstEntry() {
+        return getFirstEntry();
+    }
+
+    @Override
+    public Entry<K, V> lastEntry() {
+        return getLastEntry();
+    }
+
+    @Override
+    public Entry<K, V> pollFirstEntry() {
+        Entry<K,V> p = getFirstEntry();
+        if (p != null)
+            deleteEntry(p);
+        return p;
+    }
+
+    @Override
+    public Entry<K, V> pollLastEntry() {
+        Entry<K,V> p = getLastEntry();
+        if (p != null)
+            deleteEntry(p);
+        return p;
+    }
+
+    @Override
+    public NavigableMap<K, V> descendingMap() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public NavigableSet<K> navigableKeySet() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public NavigableSet<K> descendingKeySet() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    @Override
+    public NavigableMap<K, V> subMap(K fromKey, K toKey) {
+        return subMap(fromKey, true, toKey, false);        
+    }
+    @Override
+    public NavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+        return new NavigableSubMap(this,false,fromKey,fromInclusive,false,toKey,toInclusive);
+    }
+
+    @Override
+    public NavigableMap<K, V> headMap(K toKey) {
+       return headMap(toKey, false);        
+    }
+    @Override
+    public NavigableMap<K, V> headMap(K toKey, boolean inclusive) {
+        return new NavigableSubMap(this,true,null,true,false,toKey,inclusive);
+    }
+
+    @Override
+    public NavigableMap<K, V> tailMap(K fromKey) {
+        return tailMap(fromKey, true);
+        
+    }
+    @Override
+    public NavigableMap<K, V> tailMap(K fromKey, boolean inclusive) {
+        return new NavigableSubMap(this,false,fromKey,inclusive,true,null,true);
+    }
+    
     /*------------------------------------------------------------------*/
     private class EntrySet extends AbstractSet<Map.Entry<K,V>> {
         @Override
@@ -546,7 +690,7 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
         }
     }
     /*------------------------------------------------------------*/
-    class NavigableSubMap<K,V> extends AbstractMap<K,V> implements SortedMap<K,V>{
+    public static class NavigableSubMap<K,V> extends AbstractMap<K,V> implements NavigableMap<K,V>{
         final MyTreeMap<K,V> m;
         final K lo, hi;
         final boolean fromStart, toEnd;
@@ -630,19 +774,7 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
         @Override
         public Comparator<? super K> comparator() {
             return m.comparator;
-        }
-        @Override
-        public SortedMap<K, V> subMap(K fromKey, K toKey) {
-            return m.subMap(fromKey, toKey);
-        }
-        @Override
-        public SortedMap<K, V> headMap(K toKey) {
-            return m.headMap(toKey);
-        }
-        @Override
-        public SortedMap<K, V> tailMap(K fromKey) {
-            return m.tailMap(fromKey);
-        }
+        }        
         @Override
         public K firstKey() {
             return m.firstKey();
@@ -651,6 +783,106 @@ public class MyTreeMap<K,V> implements SortedMap<K, V>
         public K lastKey() {
             return m.lastKey();
         }        
+
+        @Override
+        public Entry<K, V> lowerEntry(K key) {
+            return m.lowerEntry(key);
+        }
+
+        @Override
+        public K lowerKey(K key) {
+            return m.lowerKey(key);
+        }
+
+        @Override
+        public Entry<K, V> floorEntry(K key) {
+            return m.floorEntry(key);
+        }
+
+        @Override
+        public K floorKey(K key) {
+            return m.floorKey(key);
+        }
+
+        @Override
+        public Entry<K, V> ceilingEntry(K key) {
+            return m.ceilingEntry(key);
+        }
+
+        @Override
+        public K ceilingKey(K key) {
+            return m.ceilingKey(key);
+        }
+
+        @Override
+        public Entry<K, V> higherEntry(K key) {
+            return m.higherEntry(key);
+        }
+
+        @Override
+        public K higherKey(K key) {
+            return m.higherKey(key);
+        }
+
+        @Override
+        public Entry<K, V> firstEntry() {
+            return m.firstEntry();
+        }
+
+        @Override
+        public Entry<K, V> lastEntry() {
+            return m.lastEntry();
+        }
+
+        @Override
+        public Entry<K, V> pollFirstEntry() {
+            return m.pollFirstEntry();
+        }
+
+        @Override
+        public Entry<K, V> pollLastEntry() {
+            return m.pollLastEntry();
+        }
+
+        @Override
+        public NavigableMap<K, V> descendingMap() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public NavigableSet<K> navigableKeySet() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public NavigableSet<K> descendingKeySet() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public NavigableMap<K, V> subMap(K fromKey, K toKey) {
+            return subMap(fromKey, true, toKey, false);
+        }
+        @Override
+        public NavigableMap<K, V> headMap(K toKey) {
+            return headMap(toKey, false);
+        }
+        @Override
+        public NavigableMap<K, V> tailMap(K fromKey) {
+            return tailMap(fromKey, true);
+        }
+        @Override
+        public NavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+            return m.subMap(fromKey, fromInclusive, toKey, toInclusive);
+        }
+        @Override
+        public NavigableMap<K, V> headMap(K toKey, boolean inclusive) {
+            return m.headMap(toKey, inclusive);
+        }
+        @Override
+        public NavigableMap<K, V> tailMap(K fromKey, boolean inclusive) {
+            return m.tailMap(fromKey, inclusive);
+        }
         private class EntrySetView extends AbstractSet<Map.Entry<K,V>> {
             @Override
             public Iterator<Map.Entry<K,V>> iterator() {
