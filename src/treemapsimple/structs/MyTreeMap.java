@@ -777,88 +777,74 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
         }        
         @Override
         public K firstKey() {
-            return m.firstKey();
+            Entry<K,V> f = firstEntry();
+            return (f != null) ? f.getKey() : null;
         }
         @Override
         public K lastKey() {
-            return m.lastKey();
+            Entry<K,V> l = lastEntry();
+            return (l != null) ? l.getKey() : null;
         }        
-
         @Override
         public Entry<K, V> lowerEntry(K key) {
             return m.lowerEntry(key);
         }
-
         @Override
         public K lowerKey(K key) {
             return m.lowerKey(key);
         }
-
         @Override
         public Entry<K, V> floorEntry(K key) {
             return m.floorEntry(key);
         }
-
         @Override
         public K floorKey(K key) {
             return m.floorKey(key);
         }
-
         @Override
         public Entry<K, V> ceilingEntry(K key) {
             return m.ceilingEntry(key);
         }
-
         @Override
         public K ceilingKey(K key) {
             return m.ceilingKey(key);
         }
-
         @Override
         public Entry<K, V> higherEntry(K key) {
             return m.higherEntry(key);
         }
-
         @Override
         public K higherKey(K key) {
             return m.higherKey(key);
         }
-
         @Override
         public Entry<K, V> firstEntry() {
             return m.firstEntry();
         }
-
         @Override
         public Entry<K, V> lastEntry() {
             return m.lastEntry();
         }
-
         @Override
         public Entry<K, V> pollFirstEntry() {
             return m.pollFirstEntry();
         }
-
         @Override
         public Entry<K, V> pollLastEntry() {
             return m.pollLastEntry();
         }
-
         @Override
         public NavigableMap<K, V> descendingMap() {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
-
         @Override
         public NavigableSet<K> navigableKeySet() {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
-
         @Override
         public NavigableSet<K> descendingKeySet() {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
-
         @Override
         public NavigableMap<K, V> subMap(K fromKey, K toKey) {
             return subMap(fromKey, true, toKey, false);
@@ -886,13 +872,15 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
         private class EntrySetView extends AbstractSet<Map.Entry<K,V>> {
             @Override
             public Iterator<Map.Entry<K,V>> iterator() {
-                //System.out.println("lowest: " + absLowest());
-                //System.out.println("high: " + absHighFence());
                 return new SubMapEntryIterator(absLowest(), absHighFence());                
             }
             @Override
             public int size() {
-                return m.size;
+                int s = 0;
+                for(Entry<K,V> e : entrySet()){
+                    s++;
+                }
+                return s;
             }        
         }
         abstract class SubMapIterator<T> implements Iterator<T> {

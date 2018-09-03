@@ -45,12 +45,16 @@ public class SubMapTest extends Test
         this.comprobar_que(aux.firstKey() != null);
         this.comprobar_que(aux.lastKey() != null);
     }
-    private void probando_submapa_claves_inexistente(int ini,int fin, int largo) throws Exception {
+    private void probando_submapa_claves(int ini,int fin) throws Exception {
         this.cargando();
         MyTreeMap.NavigableSubMap<Integer,String> aux = (MyTreeMap.NavigableSubMap<Integer,String>) map.subMap(ini,fin);
-        this.comprobar_que(aux.size() == largo);
-        this.comprobar_que(aux.firstKey() != null);
-        this.comprobar_que(aux.lastKey() != null);
+        if(!aux.isEmpty()){
+            this.comprobar_que(aux.firstKey() != null);
+            this.comprobar_que(aux.lastKey() != null);
+        } else {
+            this.comprobar_que(aux.firstKey() == null);
+            this.comprobar_que(aux.lastKey() == null);
+        }
     }
     //</editor-fold>
     @Override
@@ -60,8 +64,9 @@ public class SubMapTest extends Test
             probando_submapa_nulo();
             probando_submapa_derecha_nulo();
             probando_submapa_izquierda_nulo();
-            probando_submapa_claves_inexistente(-2,5,4);
-            probando_submapa_claves_inexistente(-2,5,4);
+            probando_submapa_claves(-2,7);
+            probando_submapa_claves(4,17);
+            probando_submapa_claves(-1,17);
         } catch(Exception ex){
             ex.printStackTrace();
         }
