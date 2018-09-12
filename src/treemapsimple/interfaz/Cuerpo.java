@@ -21,5 +21,7 @@ public class Cuerpo {
         t1.test();
         t1 = new SubMapTest();
         t1.test();
+        t1 = new EntryTest();
+        t1.test();
     }
 }

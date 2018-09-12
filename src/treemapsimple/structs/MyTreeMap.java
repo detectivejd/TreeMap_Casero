@@ -334,110 +334,41 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
     private int compare(Object k1, Object k2) {
         return comparator == null ? ((Comparable<? super K>)k1).compareTo((K)k2)
             : comparator.compare((K)k1, (K)k2);
-    }
-    private Entry<K,V> getCeilingEntry(K key) {
-        Entry<K,V> p = root;
-        while (p != null) {
-            int cmp = compare(key, p.key);
-            if (cmp < 0) {
-                if (p.left != null)
-                    p = p.left;
-                else
-                    return p;
-            } else if (cmp > 0) {
-                if (p.right != null) {
-                    p = p.right;
-                } else {
-                    Entry<K,V> parent = p.parent;
-                    Entry<K,V> ch = p;
-                    while (parent != null && ch == parent.right) {
-                        ch = parent;
-                        parent = parent.parent;
-                    }
-                    return parent;
-                }
-            } else
-                return p;
-        }
-        return null;
-    }
-    private Entry<K,V> getHigherEntry(K key) {
-        Entry<K,V> p = root;
-        while (p != null) {
-            int cmp = compare(key, p.key);
-            if (cmp < 0) {
-                if (p.left != null)
-                    p = p.left;
-                else
-                    return p;
+    }    
+    private Entry<K, V> getEntryAfter(K key, boolean inclusive) {
+        Entry<K, V> found = null;
+        Entry<K, V> node = root;
+        while (node != null && key != null) {
+            int c = compare(key, node.getKey());
+            if (inclusive && c == 0) {
+                return node;
+            }
+            if (c >= 0) {
+                node = rightOf(node);
             } else {
-                if (p.right != null) {
-                    p = p.right;
-                } else {
-                    Entry<K,V> parent = p.parent;
-                    Entry<K,V> ch = p;
-                    while (parent != null && ch == parent.right) {
-                        ch = parent;
-                        parent = parent.parent;
-                    }
-                    return parent;
-                }
+                found = node;
+                node = leftOf(node);
             }
         }
-        return null;
+        return found;
     }
-    private Entry<K,V> getFloorEntry(K key) {
-        Entry<K,V> p = root;
-        while (p != null) {
-            int cmp = compare(key, p.key);
-            if (cmp > 0) {
-                if (p.right != null)
-                    p = p.right;
-                else
-                    return p;
-            } else if (cmp < 0) {
-                if (p.left != null) {
-                    p = p.left;
-                } else {
-                    Entry<K,V> parent = p.parent;
-                    Entry<K,V> ch = p;
-                    while (parent != null && ch == parent.left) {
-                        ch = parent;
-                        parent = parent.parent;
-                    }
-                    return parent;
-                }
-            } else
-                return p;
-
-        }
-        return null;
-    }
-    private Entry<K,V> getLowerEntry(K key) {
-        Entry<K,V> p = root;
-        while (p != null) {
-            int cmp = compare(key, p.key);
-            if (cmp > 0) {
-                if (p.right != null)
-                    p = p.right;
-                else
-                    return p;
+    private Entry<K, V> getEntryBefore(K key, boolean inclusive) {
+        Entry<K, V> found = null;
+        Entry<K, V> node = root;
+        while (node != null && key != null) {
+            int c = compare(key, node.getKey());
+            if (inclusive && c == 0) {
+                return node;
+            }
+            if (c <= 0) {
+                node = leftOf(node);
             } else {
-                if (p.left != null) {
-                    p = p.left;
-                } else {
-                    Entry<K,V> parent = p.parent;
-                    Entry<K,V> ch = p;
-                    while (parent != null && ch == parent.left) {
-                        ch = parent;
-                        parent = parent.parent;
-                    }
-                    return parent;
-                }
+                found = node;
+                node = rightOf(node);
             }
         }
-        return null;
-    }
+        return found;
+    }    
     private static <K,V> Entry<K,V> successor(Entry<K,V> t) {      
         if (t == null)
             return null;
@@ -500,47 +431,55 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
 
     @Override
     public K lastKey() {
-        return getLastEntry().key;
+        return lastEntry().getKey();
     }    
 
     @Override
     public Entry<K, V> lowerEntry(K key) {
-        return getLowerEntry(key);
+        Entry<K,V> e = getEntryBefore(key, false);
+        return (e != null) ? e : null;
     }
 
     @Override
     public K lowerKey(K key) {
-        return getLowerEntry(key).getKey();
+        Entry<K,V> e = getEntryBefore(key, false);
+        return (e != null) ? e.getKey() : null;
     }
 
     @Override
     public Entry<K, V> floorEntry(K key) {
-        return getFloorEntry(key);
+        Entry<K,V> e = getEntryBefore(key, true);
+        return (e != null) ? e : null;
     }
 
     @Override
     public K floorKey(K key) {
-        return getFloorEntry(key).getKey();
+        Entry<K,V> e = getEntryBefore(key, true);
+        return (e != null) ? e.getKey() : null;
     }
 
     @Override
     public Entry<K, V> ceilingEntry(K key) {
-        return getCeilingEntry(key);
+        Entry<K,V> e = getEntryAfter(key, true);
+        return (e != null) ? e : null;
     }
 
     @Override
     public K ceilingKey(K key) {
-        return getCeilingEntry(key).getKey();
+        Entry<K,V> e = getEntryAfter(key, true);
+        return (e != null) ? e.getKey() : null;
     }
 
     @Override
     public Entry<K, V> higherEntry(K key) {
-        return getHigherEntry(key);
+        Entry<K,V> e = getEntryAfter(key, false);
+        return (e != null) ? e : null;
     }
 
     @Override
     public K higherKey(K key) {
-        return getHigherEntry(key).getKey();
+        Entry<K,V> e = getEntryAfter(key, false);
+        return (e != null) ? e.getKey() : null;        
     }
 
     @Override
@@ -550,7 +489,13 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
 
     @Override
     public Entry<K, V> lastEntry() {
-        return getLastEntry();
+        Entry<K,V> p = root;
+        if (p != null){
+            while(rightOf(p) != null){
+                p = rightOf(p);
+            }
+        }
+        return p;
     }
 
     @Override
@@ -752,9 +697,9 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
             if(fromStart){
                 e = m.getFirstEntry();
             } else if(loInclusive){
-                e = m.getCeilingEntry(lo != null ? lo : (!m.isEmpty() ? firstKey() : null));
+                e = m.getEntryAfter(lo != null ? lo : (!m.isEmpty() ? firstKey() : null),true);
             } else {
-                e = m.getHigherEntry(lo);
+                e = m.getEntryAfter(lo,false);
             }
             return (e == null || tooHigh(e.getKey())) ? null : e;
         }
@@ -762,9 +707,9 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
             if(toEnd){
                 return null;
             } else if(hiInclusive){
-                return m.getHigherEntry(hi);
+                return m.getEntryAfter(hi,false);
             } else {
-                return m.getCeilingEntry(hi != null ? hi : (!m.isEmpty() ? lastKey() : null));
+                return m.getEntryAfter(hi != null ? hi : (!m.isEmpty() ? lastKey() : null),true);
             }
         }
         @Override
