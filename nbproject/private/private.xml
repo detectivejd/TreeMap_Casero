@@ -4,6 +4,9 @@
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
             <file>file:/home/detectivejd/NetBeansProjects/Java/Structs/TreeMapSimple/src/treemapsimple/structs/MyTreeMap.java</file>
+            <file>file:/home/detectivejd/NetBeansProjects/Java/Structs/TreeMapSimple/src/treemapsimple/test/EntryTest.java</file>
+            <file>file:/home/detectivejd/NetBeansProjects/Java/Structs/TreeMapSimple/src/treemapsimple/interfaz/Cuerpo.java</file>
+            <file>file:/home/detectivejd/NetBeansProjects/Java/Structs/TreeMapSimple/src/treemapsimple/test/SubMapTest.java</file>
         </group>
     </open-files>
 </project-private>

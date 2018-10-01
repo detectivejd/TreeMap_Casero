@@ -1,9 +1,9 @@
 package treemapsimple.test;
 import treemapsimple.structs.MyTreeMap;
-public class HeadMapTest extends Test
+public class AscendingHeadMapTest extends Test
 {
     MyTreeMap<Integer,String>map;
-    public HeadMapTest() {
+    public AscendingHeadMapTest() {
         map = new MyTreeMap();
         this.cargando();
     }    
@@ -19,25 +19,25 @@ public class HeadMapTest extends Test
     //</editor-fold>
     //<editor-fold desc="pruebas">
     private void probando_cabeza_normal() throws Exception {
-        MyTreeMap.NavigableSubMap<Integer,String> aux = (MyTreeMap.NavigableSubMap<Integer,String>) map.headMap(3);
+        MyTreeMap.AscendingSubMap<Integer,String> aux = (MyTreeMap.AscendingSubMap<Integer,String>) map.headMap(3);
         this.comprobar_que(aux.size() == 2);
         this.comprobar_que(aux.firstKey() != null);
         this.comprobar_que(aux.lastKey() != null);
     }
     private void probando_cabeza_nula() throws Exception {
-        MyTreeMap.NavigableSubMap<Integer,String> aux = (MyTreeMap.NavigableSubMap<Integer,String>) map.headMap(null);
+        MyTreeMap.AscendingSubMap<Integer,String> aux = (MyTreeMap.AscendingSubMap<Integer,String>) map.headMap(null);
         this.comprobar_que(aux.isEmpty());
         this.comprobar_que(aux.firstKey() == null);
         this.comprobar_que(aux.lastKey() == null);
     }
     private void probando_cabeza_con_clave_inexistente() throws Exception {
-        MyTreeMap.NavigableSubMap<Integer,String> aux = (MyTreeMap.NavigableSubMap<Integer,String>) map.headMap(12);
+        MyTreeMap.AscendingSubMap<Integer,String> aux = (MyTreeMap.AscendingSubMap<Integer,String>) map.headMap(12);
         this.comprobar_que(aux.isEmpty());
         this.comprobar_que(aux.firstKey() == null);
         this.comprobar_que(aux.lastKey() == null);
     }
     private void probando_cabeza_con_clave_grande() throws Exception {
-        MyTreeMap.NavigableSubMap<Integer,String> aux = (MyTreeMap.NavigableSubMap<Integer,String>) map.headMap(2000);
+        MyTreeMap.AscendingSubMap<Integer,String> aux = (MyTreeMap.AscendingSubMap<Integer,String>) map.headMap(2000);
         this.comprobar_que(aux.isEmpty());
         this.comprobar_que(aux.firstKey() == null);
         this.comprobar_que(aux.lastKey() == null);
