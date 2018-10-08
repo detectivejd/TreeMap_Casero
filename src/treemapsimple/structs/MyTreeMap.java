@@ -179,47 +179,31 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
             return null;
         } else {
             V oldValue = p.value;
-            deleteEntry(p);              
+            deleteEntry(p);            
             return oldValue;
         }
-    }
+    }        
     private void deleteEntry(Entry<K,V> p) {
         size--;
-        if(leftOf(p) != null && rightOf(p) != null){
-            Entry<K,V> s = getEntryAfter(p.getKey(),false);
-            p.key = s.key;
-            p.value = s.value;
-            p = s;
-        } 
-        Entry<K,V> rep = (leftOf(p) != null ? leftOf(p) : rightOf(p));
-        if (rep != null) {
-            rep.parent = parentOf(p);
-            if (parentOf(p) == null) {
-                root = rep;
-            } else if (p == leftOf(parentOf(p))) {
-                p.parent.left  = rep;
+        Entry<K,V> nil = new Entry();
+        Entry<K,V> y = (leftOf(p) == null || rightOf(p) == null) ? p : higherEntry(p.getKey());
+        Entry<K,V> x = (leftOf(y) != null) ? leftOf(y) : (rightOf(y) != null ? rightOf(y) : nil);        
+        x.parent = parentOf(y);
+        if (parentOf(y) == null) {
+            root = (x == nil ? null : x);
+        } else {
+            if (y == leftOf(parentOf(y))) {
+                y.parent.left = (x == nil) ? null : x;
             } else {
-                p.parent.right = rep; 
+                y.parent.right = (x == nil) ? null : x; 
             }
-            p.left = p.right = p.parent = null;
-            if (colorOf(p) == BLACK) {
-                fixDown(rep); 
-            }
-        } else if (parentOf(p) == null) { // return if we are the only node.
-            root = null;
-        } else { //  No children. Use self as phantom replacement and unlink.
-            if (colorOf(p) == BLACK) {
-                fixDown(p); 
-            }
-            if (parentOf(p) != null) {
-                if (p == leftOf(parentOf(p))) {
-                    p.parent.left = null;
-                } else if (p == rightOf(parentOf(p))) {
-                    p.parent.right = null; 
-                }
-                p.parent = null;
-            }
-        }        
+        }       
+        if (y != p){
+            p = y;
+        }
+        if (colorOf(y) == BLACK) {
+            fixDown(x);
+        }
     }
     private void fixDown(Entry<K,V>x){
         while(x != root && colorOf(x) == BLACK) {
@@ -546,7 +530,7 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
         }
         @Override
         public V next() {
-            return nextEntry().value;
+            return nextEntry().getValue();
         }
     }
     private class KeySet extends AbstractSet<K> implements NavigableSet<K> {
@@ -635,7 +619,7 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
         }
         @Override
         public K next() {
-            return nextEntry().key;
+            return nextEntry().getKey();
         }
     }
     /*------------------------------------------------------------*/
@@ -652,13 +636,13 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
         }
         public Entry<K,V> nextEntry() {
             Entry<K,V> e = next;
-            next = getEntryAfter(e.getKey(),false);
+            next = higherEntry(e.getKey());
             last = e;
             return e;
         }
         public Entry<K,V> prevEntry() {
             Entry<K,V> e = next;
-            next = getEntryBefore(e.getKey(),false);
+            next = lowerEntry(e.getKey());
             last = e;
             return e;
         }
@@ -682,8 +666,11 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
                     lo = xm.firstKey();
                     xm.compare(hi, hi);
                 } else {    
-                    if (xm.compare(lo, hi) > 0)
-                        throw new IllegalArgumentException("fromKey > toKey");
+                    if (xm.compare(lo, hi) > 0){
+                        K aux = lo;
+                        lo = hi;
+                        hi = aux;
+                    }
                 }
             } else {
                 if (!fromStart) // type check
@@ -728,9 +715,9 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
             if(fromStart){
                 e = m.firstEntry();
             } else if(loInclusive){
-                e = m.getEntryAfter(lo != null ? lo : (!m.isEmpty() ? firstKey() : null),true);
+                e = m.ceilingEntry(lo != null ? lo : (!m.isEmpty() ? firstKey() : null));
             } else {
-                e = m.getEntryAfter(lo,false);
+                e = m.higherEntry(lo);
             }
             return (e == null || tooHigh(e.getKey())) ? null : e;
         }
@@ -738,9 +725,9 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
             if(toEnd){
                 return null;
             } else if(hiInclusive){
-                return m.getEntryAfter(hi,false);
+                return m.higherEntry(hi);
             } else {
-                return m.getEntryAfter(hi != null ? hi : (!m.isEmpty() ? lastKey() : null),true);
+                return m.ceilingEntry(hi != null ? hi : (!m.isEmpty() ? lastKey() : null));
             }
         }
         protected MyTreeMap.Entry<K,V> absHighest() {
@@ -909,13 +896,13 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
             }
             public MyTreeMap.Entry<K,V> nextEntry() {
                 MyTreeMap.Entry<K,V> e = next;
-                next = m.getEntryAfter(e.getKey(), false);
+                next = m.higherEntry(e.getKey());
                 last = e;
                 return e;
             }
             final MyTreeMap.Entry<K,V> prevEntry() {
                 MyTreeMap.Entry<K,V> e = next;
-                next = m.getEntryBefore(e.getKey(), false);
+                next = m.lowerEntry(e.getKey());
                 last = e;
                 return e;
             }
@@ -1075,7 +1062,7 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
         }
         @Override
         public K next() {
-            return prevEntry().key;
+            return prevEntry().getKey();
         }
     }
     /*------------------------------------------------------------*/        
@@ -1085,7 +1072,8 @@ public class MyTreeMap<K,V> implements NavigableMap<K, V>
         Entry<K,V> left;
         Entry<K,V> right;
         Entry<K,V> parent;
-        boolean color = BLACK;        
+        boolean color = BLACK;
+        public Entry() { }        
         public Entry(K xkey, V xvalue,Entry<K,V> xparent) {
             this.key = xkey;
             this.value = xvalue;
